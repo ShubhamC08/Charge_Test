@@ -1,11 +1,145 @@
-from gpiozero import LED
-import spidev
 import random
+import spidev
 import redis
 import datetime
 import sqlite3
 from sqlite3 import Error
 import time
+
+
+def connect_redis():
+    """
+    connect ot redis database and gets the value from the database
+    :return:
+    """
+    # connect to redis
+    rdb = redis.Redis(host="127.0.0.1", port=6379, db=0)
+    # sample a new value random times between 100ms and 2s
+    mode_value = rdb.get('mode_type')
+    print(str(mode_value))
+    return mode_value
+
+
+class connect_sqlite:
+    """
+    handles sqlite
+    """
+
+    def __init__(self):
+        try:
+            self.conn = sqlite3.connect('test.db')
+            print("Connected database successfully")
+        except Exception as e:
+            print(e)
+
+    def create_table(self, tbl_name):
+        """
+        creates the table in a database in these case
+        :param tbl_name: desire table name we wanted.
+        :return: created table of desired table name
+        """
+        sql_query = '''CREATE TABLE IF NOT EXISTS {}(
+                                        id integer PRIMARY KEY,
+                                        Timestamp text NOT NULL,
+                                        V1 real,V2 real,V3 real,V4 real,V5 real,V6 real,V7 real,V8 real,V9 real,V10 real,
+                                        T1 real,T2 real,T3 real,T4 real,T5 real,T6 real,T7 real,T8 real,T9 real,T10 real,
+                                        C1 real,C2 real,C3 real,C4 real,C5 real,C6 real,C7 real,C8 real,C9 real,C10 real,
+                                        I1 real,I2 real,I3 real,I4 real,I5 real,I6 real,I7 real,I8 real,I9 real,I10 real,
+                                        A1 real,A2 real,A3 real,A4 real,A5 real,A6 real,A7 real,A8 real,A9 real,A10 real
+                                    );'''.format(tbl_name)
+        try:
+            self.conn.execute(sql_query)
+            print("sql table created!")
+        except Exception as e:
+            print(e)
+
+    def read_table(self, tbl_name):
+        """
+
+        :param tbl_name: table name
+        :return: returns the table objects
+        """
+        sql_query = '''SELECT  * FROM {}'''.format(tbl_name)
+        try:
+            return self.conn.execute(sql_query)
+        except Exception as e:
+            print(e)
+
+    def write_table(self, tbl_name, val_list):
+        """
+
+        :param tbl_name:
+        :param val_list:
+        :return:
+        """
+        #print(val_list)
+        sql_query = '''INSERT INTO  {}(Timestamp,V1,V2,V3,V4,V5,V6,V7,V8,V9,V10,T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,I1,I2,I3,I4,I5,I6,I7,I8,I9,I10,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10)
+              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'''.format(tbl_name)
+        #print(sql_query)
+        try:
+            self.conn.execute(sql_query, val_list)
+            print("data entered into {} table successfully!".format(tbl_name))
+        except Exception as e:
+            print(e)
+
+    def delete_table(self, tbl_name):
+        sql_query = '''DROP TABLE {}'''.format(tbl_name)
+        try:
+            self.conn.execute(sql_query)
+        except Exception as e:
+            print(e)
+
+    def show_tables(self):
+        sql_query = '''SELECT name FROM sqlite_master WHERE type='table';'''
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(sql_query)
+            print(cursor.fetchall())
+        except Exception as e:
+            print(e)
+
+
+def table_name_generator():
+    current_time = datetime.datetime.now()
+    # bytes to string
+    current_mode = connect_redis().decode()
+    # current mode + current date
+    table_name = str(current_mode) + "_" + str(current_time.year) + "_" + \
+                 str(current_time.month) + "_" + str(current_time.day)
+    print(table_name)
+    print(type(table_name))
+    table_list(table_name)  # appends the list into queue for our reference
+    return table_name
+
+
+def table_list(table_name):
+    queue = [table_name]
+    if len(queue) == 25:
+        queue.pop(0)
+
+
+def get_timestamp():
+    current_time = datetime.datetime.now()
+    return current_time.timestamp()
+
+def get_datetime():
+   current_time = datetime.datetime.now()
+   return current_time
+
+def mode_one():
+    print("hello mode one")
+    """# read the in-memory database (redis)
+    connect_redis()
+    # create/connect the sqlite database
+    data = connect_sqlite()
+    data.create_table(table_name_generator())
+    # insert the 100 rows into  table
+    for i in range(100):
+        # Generate 4 random numbers between 0 and 100
+        random_list = random.sample(range(0, 100), 4)
+        data.write_table(table_name_generator(), random_list)
+    data.show_tables()"""
+
 
 #SPI Configurations
 def Start_Spi():
@@ -14,123 +148,16 @@ def Start_Spi():
     spi = spidev.SpiDev()
     spi.open(bus, device)
     spi.max_speed_hz = 100000
-    spi.mode = 0b01
-    
-    return spi 
+    spi.mode = 0b00
 
-#Create Database connection function 
-def Create_DB_Connection(db_file):
-    """ create a database connection to a SQLite database """
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-        return conn
-    except Error as e:
-        print(e)
-    
-    return conn
-
-#Create New Table in database
-def Create_Table(conn, Create_table_sql):
-    """ create a table from the create_table_sql statement
-    :param conn: Connection object
-    :param create_table_sql: a CREATE TABLE statement
-    :return:
-    """
-    try:
-        c = conn.cursor()
-        c.execute(Create_table_sql)
-    except Error as e:
-        print(e)    
-
-#Insert data into the table
-def Insert_Data(conn, InsertCmd, InsertData):
-    """
-    Create a new project into the projects table
-    :param conn:
-    :param project:
-    :return: project id
-    """
-    """sql = ''' INSERT INTO BatLog(Timestamp,V1,V2,V3,V4,V5,V6,V7,V8,V9,V10,T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,I1,I2,I3,I4,I5,I6,I7,I8,I9,I10,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10)
-              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ''' """
-    try:
-        cur = conn.cursor()
-        cur.execute(InsertCmd, InsertData)
-        conn.commit()
-    except Error as e:
-        print(e)
-
-    return cur.lastrowid
-
-def connect_redis():
-    """
-    connect ot redis database and gets the value from the database
-    :return:
-    """
-    # connect to redis
-    rdb = redis.Redis(host="127.0.0.1", port=6379, db=15)
-    # sample a new value random times between 100ms and 2s
-    mode_value = rdb.get('mode_type')
-    print(str(mode_value))
-    return mode_value
-
-def main():
-    #Redis Connection Block
-    #write_redis("Mode2")
-    redis_value = connect_redis().decode()
-    #Open SPI connection
-    spi = Start_Spi()
-
-    #Database Location
-    Database = r"/home/pi/Test_Dummy.db"
-    
-    #Create a connection to Database
-    conn = Create_DB_Connection(Database)
-    
-    #Create a table in Database with Specific name
-    #String Maniplulation Block
-    Create_Table_SQL_CMD = """ CREATE TABLE IF NOT EXISTS BatLog (
-                                        id integer PRIMARY KEY,
-                                        Timestamp text NOT NULL,
-                                        V1 real,V2 real,V3 real,V4 real,V5 real,V6 real,V7 real,V8 real,V9 real,V10 real,
-                                        T1 real,T2 real,T3 real,T4 real,T5 real,T6 real,T7 real,T8 real,T9 real,T10 real,
-                                        C1 real,C2 real,C3 real,C4 real,C5 real,C6 real,C7 real,C8 real,C9 real,C10 real,
-                                        I1 real,I2 real,I3 real,I4 real,I5 real,I6 real,I7 real,I8 real,I9 real,I10 real,
-                                        A1 real,A2 real,A3 real,A4 real,A5 real,A6 real,A7 real,A8 real,A9 real,A10 real
-                                    ); """
-
-    Insert_Data_SQL_CMD = ''' INSERT INTO BatLog(Timestamp,V1,V2,V3,V4,V5,V6,V7,V8,V9,V10,T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,I1,I2,I3,I4,I5,I6,I7,I8,I9,I10,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10)
-              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) '''
-    i = 5
-    
-    #Create Table command execution
-    Create_Table(conn, Create_Table_SQL_CMD)
-
-    """
-    if redis_value == "Mode1":
-        Algorithms.Constant_Current_Charging(spi, conn)
-        print("Mode 1 running algorithms.Constant_Current_Charging()")
-    elif redis_value == "Mode2":
-        Algorithms.Boost_Charging(spi, conn)
-        print("Mode 2 running algorithms.Constant_Boost_Charging()")
-    else:
-        print("No Mode running!") """
-
-    Constant_Current_Charging(spi, conn,Insert_Data_SQL_CMD)
-    
-    #Charging Completion Block
-     #Sleep process for some time
-
-     #After Charging Testing
+def mode_two():
+    print("hello mode two")
 
 
-    #Stop Charging
-    #Close SPI connection
-    spi.close()
-    #Close connection to database
-    conn.close()
+def mode_three():
+    print("hello mode three")
 
-def Perform_OCV(spi,conn,Insert_Data_SQL_CMD):
+def Perform_OCV(spi, data, table_name):
     #OCV Block Start
     OCV_Command =[0x1,0x0,0x0,0xFE]
     spi.writebytes(OCV_Command)
@@ -160,11 +187,11 @@ def Perform_OCV(spi,conn,Insert_Data_SQL_CMD):
     BMS_Data.insert(0, Time)
     BMS_Store_Data = tuple(BMS_Data)
     #Store Data onto Database
-    Insert_Data(conn, Insert_Data_SQL_CMD, BMS_Store_Data)
+    data.write_table(table_name, BMS_Store_Data)
     #OCV Block End
     return Temp
 
-def Read_BMS_Parameters(spi,conn,Insert_Data_SQL_CMD):
+def Read_BMS_Parameters(spi, data, table_name):
     #Coulumb_Counting Block Start
     Read_BMS_Command =[0x2,0x0,0x0,0xFE]
     spi.writebytes(Read_BMS_Command)
@@ -190,7 +217,7 @@ def Read_BMS_Parameters(spi,conn,Insert_Data_SQL_CMD):
     BMS_Data.insert(0, Time)
     BMS_Store_Data = tuple(BMS_Data)
     #Store Data onto Database
-    Insert_Data(conn, Insert_Data_SQL_CMD, BMS_Store_Data)
+    data.write_table(table_name, BMS_Store_Data)
     return Temp
 
 def Update_Charging_Parameters(spi,Charging_Voltage,Charging_Current):
@@ -229,23 +256,23 @@ def Stop_Charging(spi):
     spi.writebytes(Stop_Charging_Command)
     #D_Read = spi.readbytes(3)
 
-def Alert():
+"""def Alert():
     led = LED(17)
     i=0
     while i<3:
         led.on()
-        sleep(0.5)
+        time.sleep(0.5)
         led.off()
-        sleep(0.5)
-        i+=1
+        time.sleep(0.5)
+        i+=1"""
 
 def Emergency_Stop_Routine(spi):
     Stop_Charging(spi)
-    led = OUTPUT_PIN(17)
-    while User_Acknowledge_Flag == 0:
-        led.on()
+    #led = OUTPUT_PIN(17)
+    #while User_Acknowledge_Flag == 0:
+       # led.on()
 
-def Constant_Current_Charging(spi,conn,Insert_Data_SQL_CMD):
+def Constant_Current_Charging(spi, data, table_name):
     Charging_Voltage_Predefined = 1300 #130.0V
     Charging_Current_Predefined = 75 #7.5A
     Charging_Voltage_Stopped = 0
@@ -260,21 +287,21 @@ def Constant_Current_Charging(spi,conn,Insert_Data_SQL_CMD):
     Fault=[0,0,0,0,0,0,0,0,0,0]
     i=0
     while i<5:
-        BMS_Param = Perform_OCV(spi,conn,Insert_Data_SQL_CMD)
+        BMS_Param = Perform_OCV(spi, data, table_name)
         time.sleep(5)
         i+=1
     Update_Charging_Parameters(spi,Charging_Voltage_Predefined,Charging_Current_Predefined)
     time.sleep(1)
     Start_Charging(spi)
     time.sleep(5)
-    BMS_Param = Perform_OCV(spi,conn,Insert_Data_SQL_CMD)
+    BMS_Param = Perform_OCV(spi,  data, table_name)
     #Check if voltages have set to Recommended Levels
 
     #End Block
     #Start Charging Loop
     j=0
     while j<5:
-        BMS_Param = Read_BMS_Parameters(spi,conn,Insert_Data_SQL_CMD)
+        BMS_Param = Read_BMS_Parameters(spi,  data, table_name)
         #Slpicing List into Components
         Voltage = BMS_Param[0:10]
         Temperature = BMS_Param[10:20]
@@ -292,7 +319,8 @@ def Constant_Current_Charging(spi,conn,Insert_Data_SQL_CMD):
         #Alarm Block
         for i in Alarm:
             if Alarm[i] != 0:
-                Alert()
+                #Alert()
+                pass
             else:
                 pass    
         #End Block
@@ -314,7 +342,7 @@ def Constant_Current_Charging(spi,conn,Insert_Data_SQL_CMD):
         j+=1
     #Stopped Charging
     if Critical_Alarm_Flag == 1:
-        Emergency_Stop_Routine(spi,conn)
+        Emergency_Stop_Routine(spi)
     else:
         #Update_Charging_Parameters(spi,Charging_Voltage_Stopped,Charging_Current_Stopped)
         Stop_Charging(spi)
@@ -323,7 +351,7 @@ def Constant_Current_Charging(spi,conn,Insert_Data_SQL_CMD):
         j=0
         while j<3:
             #Perform OCV
-            BMS_Param = Perform_OCV(spi,conn,Insert_Data_SQL_CMD)
+            BMS_Param = Perform_OCV(spi, data, table_name)
             #Slpicing List into Components
             Voltage = BMS_Param[0:10]
             Temperature = BMS_Param[10:20]
@@ -352,6 +380,8 @@ def Boost_Charging(spi,conn):
     Full_Charge_Voltage = 1375 #13.75V
     Exit_Flag = 0
     Critical_Alarm_Flag = 0
+    High_Temperature_Level = 4500
+    Critical_Temperature_Level = 5500
     Fault=[0,0,0,0,0,0,0,0,0,0]
     i=0
     while i<5:
@@ -385,7 +415,8 @@ def Boost_Charging(spi,conn):
         #Alarm Block
         for i in Alarm:
             if Alarm[i] != 0:
-                Alert()
+                #Alert()
+                pass
             else:
                 pass    
         #End Block
@@ -431,8 +462,24 @@ def Boost_Charging(spi,conn):
             #Add Delay for 1 hour   
             time.sleep(3600)
 
+def main():
+    k=0
+    while k < 20:
+        redis_val = connect_redis().decode()
+        spi = Start_Spi()
+        data = connect_sqlite()
+        table_name = table_name_generator()
+        data.create_table(table_name)
+        if redis_val == 'Mode1':
+            print("Mode1")
+            mode_one()
+        elif redis_val == 'Mode2':
+            Constant_Current_Charging(spi, data, table_name)
+        elif redis_val == 'Mode3':
+            mode_three()
+        else:
+            print("no mode running")
+        k+=1 
 
-if __name__ == '__main__':
-    main()
-
-
+if __name__ == "__main__":
+   main()
