@@ -48,8 +48,8 @@ class connect_sqlite:
         :return: created table of desired table name
         """
         sql_query = '''CREATE TABLE IF NOT EXISTS {}(
-                                        id integer PRIMARY KEY,
-                                        Timestamp timestamp,
+                                        ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         V1 numeric,V2 numeric,V3 numeric,V4 numeric,V5 numeric,V6 numeric,V7 numeric,V8 numeric,V9 numeric,V10 numeric,
                                         T1 numeric,T2 numeric,T3 numeric,T4 numeric,T5 numeric,T6 numeric,T7 numeric,T8 numeric,T9 numeric,T10 numeric,
                                         C1 numeric,C2 numeric,C3 numeric,C4 numeric,C5 numeric,C6 numeric,C7 numeric,C8 numeric,C9 numeric,C10 numeric,
@@ -82,7 +82,7 @@ class connect_sqlite:
         :return:
         """
         #print(val_list)
-        sql_query = '''INSERT INTO  {}(Timestamp,V1,V2,V3,V4,V5,V6,V7,V8,V9,V10,T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,I1,I2,I3,I4,I5,I6,I7,I8,I9,I10,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10)
+        sql_query = '''INSERT INTO  {}(V1,V2,V3,V4,V5,V6,V7,V8,V9,V10,T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,I1,I2,I3,I4,I5,I6,I7,I8,I9,I10,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10)
               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'''.format(tbl_name)
         #print(sql_query)
         try:
