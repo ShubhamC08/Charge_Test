@@ -431,10 +431,10 @@ def Constant_Current_Charging():
     #Configueration Selection Block
 
     #Read AH value from redis
-    AH_Value = rdb.get('AH_Value')
+    AH_Value = rdb.get('AH_Value').decode()
     #AH_Value = '0'
     #Read Make value from redis
-    Make_Value = rdb.get('Make_Value')
+    Make_Value = rdb.get('Make_Value').decode()
     #Make_Value = '0'
     
     Config=Configuration(AH_Value,Make_Value)
