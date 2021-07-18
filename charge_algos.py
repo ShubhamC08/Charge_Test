@@ -296,7 +296,7 @@ def Emergency_Stop_Routine(spi):
 
 def Configuration(AH,Make):
     if AH == '0':
-        if Make == '0'
+        if Make == '0':
             #Configuration for Jumbo 75AH
             Config[0] = 0 #Charging Voltage 
             Config[1] = 0 #Charging Cureent
@@ -346,7 +346,7 @@ def Configuration(AH,Make):
             Config[3] = 1350 #Full Charge Voltage High Limit
             Config[4] = 0 #Duration
     elif AH == '1':
-        if Make == '0'
+        if Make == '0':
             #Configuration for Jumbo 90AH
             Config[0] =  1350 #Charging Voltage 
             Config[1] =  70 #Charging Cureent
