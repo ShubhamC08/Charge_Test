@@ -416,8 +416,10 @@ def Constant_Current_Charging():
     #Configueration Selection Block
 
     #Read AH value from redis
-
+    AH_Value = '0'
     #Read Make value from redis
+    Make_Value = '0'
+    
 
     Config=Configuration(AH_Value,Mak_Value)
     
