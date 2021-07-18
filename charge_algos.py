@@ -481,8 +481,8 @@ def Constant_Current_Charging():
     Start_Time = datetime.datetime.now().timestamp()
     #Loop_Time = Start_Time + ((Duration - 3) * 3600)
     #Max_Time = Start_Time + (Duration * 3600)
-    Loop_Time = Start_Time + (60) #For Test
-    Max_Time = Start_Time + (30)  #For Test
+    Loop_Time = Start_Time + (120) #For Test
+    Max_Time = Start_Time + (200)  #For Test
     
     #redis mode reset to prevent rerun of code
     #rdb = redis.Redis(host="127.0.0.1", port=6379, db=0)
