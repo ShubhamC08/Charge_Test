@@ -295,7 +295,7 @@ def Emergency_Stop_Routine(spi):
        # led.on()
 
 def Configuration(AH,Make):
-    Config=[]
+    Config=[0,0,0,0,0]
     if AH == '0':
         if Make == '0':
             #Configuration for Jumbo 75AH
