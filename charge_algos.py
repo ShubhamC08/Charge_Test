@@ -200,9 +200,15 @@ def Perform_OCV(spi, data, table_name):
         i+=1
     #Get Timestamp
     Temp = BMS_Data.copy()
-    Time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    i=0
+    j=0
+    for i in BMS_Data:
+        X = round((i * 0.01),2)
+        BMS_Data[j] = X
+        j+=1
+    #Time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     #Time = datetime.datetime.now().replace(microsecond=0)
-    BMS_Data.insert(0, Time)
+    #BMS_Data.insert(0, Time)
     BMS_Store_Data = tuple(BMS_Data)
     
     #Store Data onto Database
@@ -233,9 +239,15 @@ def Read_BMS_Parameters(spi, data, table_name):
         i+=1
     #Get Timestamp
     Temp = BMS_Data.copy()
-    Time = datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S')
+    i=0
+    j=0
+    for i in BMS_Data:
+        X = round((i * 0.01),2)
+        BMS_Data[j] = X
+        j+=1
+    #Time = datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S')
     #Time = datetime.datetime.now().replace(microsecond=0)
-    BMS_Data.insert(0, Time)
+    #BMS_Data.insert(0, Time)
     BMS_Store_Data = tuple(BMS_Data)
     #Store Data onto Database
     data.write_table(table_name, BMS_Store_Data)
@@ -295,59 +307,58 @@ def Emergency_Stop_Routine(spi):
        # led.on()
 
 def Configuration(AH,Make):
-    Config=[0,0,0,0,0]
     if AH == '0':
-        if Make == '0':
+        if Make == '0'
             #Configuration for Jumbo 75AH
-            Config[0] = 0 #Charging Voltage 
-            Config[1] = 0 #Charging Cureent
+            Config[0] = 1350 #Charging Voltage 
+            Config[1] = 70 #Charging Cureent
             Config[2] = 1325 #Full Charge Voltage Low Limit
             Config[3] = 1350 #Full Charge Voltage High Limit
-            Config[4] = 0 #Duration
+            Config[4] = 75 #Duration
         elif Make == '1':
             #Configuration for Celtek 75AH
-            Config[0] = 0 #Charging Voltage 
-            Config[1] = 0 #Charging Cureent
+            Config[0] = 1350 #Charging Voltage 
+            Config[1] = 70 #Charging Cureent
             Config[2] = 1300 #Full Charge Voltage Low Limit
             Config[3] = 1325 #Full Charge Voltage High Limit
-            Config[4] = 0 #Duration
+            Config[4] = 75 #Duration
         elif Make == '2':
             #Configuration for Microtek 75AH
-            Config[0] = 0 #Charging Voltage 
-            Config[1] = 0 #Charging Cureent
+            Config[0] = 1350 #Charging Voltage 
+            Config[1] = 70 #Charging Cureent
             Config[2] = 1300 #Full Charge Voltage Low Limit
             Config[3] = 1350 #Full Charge Voltage High Limit
-            Config[4] = 0 #Duration
+            Config[4] = 75 #Duration
         elif Make == '3':
             #Configuration for Exide 75AH
-            Config[0] = 0 #Charging Voltage 
-            Config[1] = 0 #Charging Cureent
+            Config[0] = 1350 #Charging Voltage 
+            Config[1] = 70 #Charging Cureent
             Config[2] = 1300 #Full Charge Voltage Low Limit
             Config[3] = 1350 #Full Charge Voltage High Limit
-            Config[4] = 0 #Duration
+            Config[4] = 75 #Duration
         elif Make == '4':
             #Configuration for Bharat 75AH
-            Config[0] = 0 #Charging Voltage 
-            Config[1] = 0 #Charging Cureent
+            Config[0] = 1350 #Charging Voltage 
+            Config[1] = 70 #Charging Cureent
             Config[2] = 1325 #Full Charge Voltage Low Limit
             Config[3] = 1375 #Full Charge Voltage High Limit
-            Config[4] = 0 #Duration
+            Config[4] = 75 #Duration
         elif Make == '5':
             #Configuration for Southern 75AH
-            Config[0] = 0 #Charging Voltage 
-            Config[1] = 0 #Charging Cureent
+            Config[0] = 1350 #Charging Voltage 
+            Config[1] = 70 #Charging Cureent
             Config[2] = 1300 #Full Charge Voltage Low Limit
             Config[3] = 1350 #Full Charge Voltage High Limit
-            Config[4] = 0 #Duration
+            Config[4] = 75 #Duration
         elif  Make == '6':
             #Configuration for Other 75AH
-            Config[0] = 0 #Charging Voltage 
-            Config[1] = 0 #Charging Cureent
+            Config[0] = 1350 #Charging Voltage 
+            Config[1] = 70 #Charging Cureent
             Config[2] = 1325 #Full Charge Voltage Low Limit
             Config[3] = 1350 #Full Charge Voltage High Limit
-            Config[4] = 0 #Duration
+            Config[4] = 75 #Duration
     elif AH == '1':
-        if Make == '0':
+        if Make == '0'
             #Configuration for Jumbo 90AH
             Config[0] =  1350 #Charging Voltage 
             Config[1] =  70 #Charging Cureent
@@ -408,20 +419,23 @@ def Constant_Current_Charging():
     data = connect_sqlite()
     table_name = table_name_generator()
     data.create_table(table_name)
+    rdb = redis.Redis(host="127.0.0.1", port=6379, db=0)
     
     #Push Table onto redis
-
+    
+    rdb.set('current_table', table_name)
 
     #End Block
 
     #Configueration Selection Block
 
     #Read AH value from redis
-    AH_Value = '0'
+    AH_Value = rdb.get('AH_Value')
+    #AH_Value = '0'
     #Read Make value from redis
-    Make_Value = '0'
+    Make_Value = rdb.get('Make_Value')
+    #Make_Value = '0'
     
-
     Config=Configuration(AH_Value,Make_Value)
     
     
@@ -470,7 +484,7 @@ def Constant_Current_Charging():
     Max_Time = Start_Time + (30)  #For Test
     
     #redis mode reset to prevent rerun of code
-    rdb = redis.Redis(host="127.0.0.1", port=6379, db=0)
+    #rdb = redis.Redis(host="127.0.0.1", port=6379, db=0)
     mode_select = 'Mode1' 
     rdb.set("mode_type", mode_select)
     #end block
@@ -546,8 +560,14 @@ def Constant_Current_Charging():
         print("Loop Done")
         
         #Read Stop flag from redis
-
+        Stop_Flag_Str = rdb.get('ss_flag')
+        if Stop_Flag_Str == 'False':
+            Critical_Alarm_Flag = 1
+            break
+        else:
+            Critical_Alarm_Flag = 0 
         #End Block
+
         #Add delay for 5mins
         time.sleep(5) #Delay for 5mins
         Curr_Timestamp = datetime.datetime.now().timestamp()
@@ -594,7 +614,13 @@ def Constant_Current_Charging():
             
 
             #Read Stop flag from redis
-
+            Stop_Flag_Str = rdb.get('ss_flag')
+            if Stop_Flag_Str == 'False':
+                #Critical_Alarm_Flag = 1
+                break
+            else:
+                pass
+                #Critical_Alarm_Flag = 0 
             #End Block
 
             time.sleep(5) #Delay for 10 mins
@@ -633,7 +659,7 @@ def Constant_Current_Charging():
         Stop_Charging(spi)
         spi.close()
         # connect to redis
-        rdb = redis.Redis(host="127.0.0.1", port=6379, db=0)
+        #rdb = redis.Redis(host="127.0.0.1", port=6379, db=0)
         mode_select = 'Mode1' 
         rdb.set("mode_type", mode_select)
     print("Charging Complete")
