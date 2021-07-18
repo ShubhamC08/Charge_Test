@@ -421,7 +421,7 @@ def Constant_Current_Charging():
     Make_Value = '0'
     
 
-    Config=Configuration(AH_Value,Mak_Value)
+    Config=Configuration(AH_Value,Make_Value)
     
     
     Charging_Voltage_Predefined = Config[0]
